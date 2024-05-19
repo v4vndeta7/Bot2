@@ -1,39 +1,35 @@
 const TelegramBot = require('node-telegram-bot-api');
 const xlsx = require('xlsx');
-const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk';
+const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk'';
 const bot = new TelegramBot(token, { polling: true });
 
-// اقرأ ملف الإكسل
+// Read Excel file
 const workbook = xlsx.readFile('results.xlsx');
 const sheet_name_list = workbook.SheetNames;
 const resultsSheet = workbook.Sheets[sheet_name_list[0]];
 const results = xlsx.utils.sheet_to_json(resultsSheet, { header: 1 });
 
-// تحويل النتائج إلى أرقام
+// Convert results to numbers
 const parsedResults = results.map(row => row.map(cell => parseInt(cell, 10)));
 
-// دالة لتحليل النتائج
+// Function to analyze results
 function analyzeResults(data) {
-    let summary = {};
+    const summary = {};
     data.forEach(row => {
         row.forEach(number => {
-            if (summary[number]) {
-                summary[number]++;
-            } else {
-                summary[number] = 1;
-            }
+            summary[number] = (summary[number] || 0) + 1;
         });
     });
     return summary;
 }
 
-// دالة لتوليد تخمينات جديدة باستخدام مولد أرقام عشوائية
+// Function to generate new predictions using a random number generator
 function generatePredictions(data) {
     const predictions = [];
     const generateUniquePrediction = () => {
         const uniquePrediction = [];
         while (uniquePrediction.length < data[0].length) {
-            const randomNum = Math.floor(Math.random() * 10); // توليد أرقام بين 0 و 9
+            const randomNum = Math.floor(Math.random() * 10); // Generating numbers between 0 and 9
             if (!uniquePrediction.includes(randomNum)) {
                 uniquePrediction.push(randomNum);
             }
@@ -47,7 +43,7 @@ function generatePredictions(data) {
     return predictions;
 }
 
-// دالة لتحديث ملف الإكسل بالنتائج الجديدة
+// Function to update Excel file with new predictions
 function updateExcel(predictions) {
     const newWorkbook = xlsx.utils.book_new();
     const newSheet = xlsx.utils.aoa_to_sheet(predictions.map(prediction => prediction.map(num => num.toString())));
@@ -55,7 +51,7 @@ function updateExcel(predictions) {
     xlsx.writeFile(newWorkbook, 'new_predictions.xlsx');
 }
 
-// دالة لتنسيق النتائج كجدول
+// Function to format results as a table
 function formatAsTable(data) {
     let table = "------------------------------\n";
     data.forEach(row => {
@@ -66,19 +62,16 @@ function formatAsTable(data) {
 }
 
 function formatAnalysisAsTable(analysis) {
-    let formTable = "";
-    for (let i = 0; i < 3; i++) {
-        formTable += `| [ ] [ ] [ ] |\n`;
-    }
+    const formTable = Array(3).fill('| [ ] [ ] [ ] |\n').join('');
     return formTable;
 }
 
-// أوامر البوت
+// Bot commands
 bot.onText(/\/analyze/, (msg) => {
     const chatId = msg.chat.id;
     const analysis = analyzeResults(parsedResults);
     const analysisTable = formatAnalysisAsTable(analysis);
-    bot.sendMessage(chatId, `تحليل:\n${analysisTable}`);
+    bot.sendMessage(chatId, `Analysis:\n${analysisTable}`);
 });
 
 bot.onText(/\/predict/, (msg) => {
@@ -86,12 +79,12 @@ bot.onText(/\/predict/, (msg) => {
     const predictions = generatePredictions(parsedResults);
     updateExcel(predictions);
     const predictionsTable = formatAsTable(predictions);
-    bot.sendMessage(chatId, `التنبؤات التالية:\n${predictionsTable}`);
+    bot.sendMessage(chatId, `Next predictions:\n${predictionsTable}`);
 });
 
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, "ברוך הבא! השתמש ב /analyze כדי לנתח תוצאות ו /predict כדי לחזות תוצאות עתידיות.");
+    bot.sendMessage(chatId, "Welcome! Use /analyze to analyze results and /predict to predict future results.");
 });
 
 bot.onText(/\/generate/, (msg) => {
@@ -99,5 +92,5 @@ bot.onText(/\/generate/, (msg) => {
     const predictions = generatePredictions(parsedResults);
     updateExcel(predictions);
     const predictionsTable = formatAsTable(predictions);
-    bot.sendMessage(chatId, `נוצרו תחזיות חדשות:\n${predictionsTable}`);
+    bot.sendMessage(chatId, `New predictions generated:\n${predictionsTable}`);
 });
