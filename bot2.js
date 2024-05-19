@@ -1,6 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const xlsx = require('xlsx');
-const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk'; // تأكد من وضع التوكن الصحيح هنا
+const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk';
 const bot = new TelegramBot(token, { polling: true });
 
 // اقرأ ملف الإكسل
@@ -27,18 +27,27 @@ function analyzeResults(data) {
     return summary;
 }
 
-// דה לגרניר תחזיות
+// دالة لتوليد تخمينات جديدة باستخدام مولد أرقام عشوائية
 function generatePredictions(data) {
     const predictions = [];
+    const generateUniquePrediction = () => {
+        const uniquePrediction = [];
+        while (uniquePrediction.length < data[0].length) {
+            const randomNum = Math.floor(Math.random() * 10); // توليد أرقام بين 0 و 9
+            if (!uniquePrediction.includes(randomNum)) {
+                uniquePrediction.push(randomNum);
+            }
+        }
+        return uniquePrediction;
+    };
+
     for (let i = 0; i < 15; i++) {
-        const lastRow = data[data.length - 1];
-        const nextPrediction = lastRow.map(num => (num + i + 1) % 10); // مجرد مثال لتوليد التخمينات
-        predictions.push(nextPrediction);
+        predictions.push(generateUniquePrediction());
     }
     return predictions;
 }
 
-// דה דלו תחזיות לתוך קובץ אקסל
+// دالة لتحديث ملف الإكسل بالنتائج الجديدة
 function updateExcel(predictions) {
     const newWorkbook = xlsx.readFile('results.xlsx');
     const newSheet = newWorkbook.Sheets[sheet_name_list[0]];
@@ -55,7 +64,7 @@ function updateExcel(predictions) {
     xlsx.writeFile(newWorkbook, 'results.xlsx');
 }
 
-// אוامر הבוט
+// أوامر البوت
 bot.onText(/\/analyze/, (msg) => {
     const chatId = msg.chat.id;
     const analysis = analyzeResults(parsedResults);
