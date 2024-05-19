@@ -61,9 +61,14 @@ function formatAsTable(data) {
     return table;
 }
 
+// Function to format analysis summary as a table
 function formatAnalysisAsTable(analysis) {
-    const formTable = Array(3).fill('| [ ] [ ] [ ] |\n').join('');
-    return formTable;
+    let table = "Number | Count\n";
+    table += "----------------\n";
+    for (const [number, count] of Object.entries(analysis)) {
+        table += `${number} | ${count}\n`;
+    }
+    return table;
 }
 
 // Bot commands
