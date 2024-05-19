@@ -65,10 +65,12 @@ function formatAsTable(data) {
     return table;
 }
 
-// دالة لتنسيق تحليل النتائج كجدول
 function formatAnalysisAsTable(analysis) {
-    let data = Object.entries(analysis).map(([key, value]) => [key, value.toString()]);
-    return formatAsTable(data);
+    let formTable = "";
+    for (let i = 0; i < 3; i++) {
+        formTable += `| [ ] [ ] [ ] |\n`;
+    }
+    return formTable;
 }
 
 // أوامر البوت
