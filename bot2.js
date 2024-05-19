@@ -12,7 +12,7 @@ const results = xlsx.utils.sheet_to_json(resultsSheet, { header: 1 });
 // تحويل النتائج إلى أرقام
 const parsedResults = results.map(row => row.map(cell => parseInt(cell, 10)));
 
-// دالة لتحليل النتائج ואגיד האנליזה
+// دالة لتحليل النتائج
 function analyzeResults(data) {
     let summary = {};
     data.forEach(row => {
@@ -49,33 +49,42 @@ function generatePredictions(data) {
 
 // دالة لتحديث ملف الإكسل بالنتائج الجديدة
 function updateExcel(predictions) {
-    const newWorkbook = xlsx.readFile('results.xlsx');
-    const newSheet = newWorkbook.Sheets[sheet_name_list[0]];
+    const newWorkbook = xlsx.utils.book_new();
+    const newSheet = xlsx.utils.aoa_to_sheet(predictions.map(prediction => prediction.map(num => num.toString())));
+    xlsx.utils.book_append_sheet(newWorkbook, newSheet, 'Predictions');
+    xlsx.writeFile(newWorkbook, 'new_predictions.xlsx');
+}
 
-    // تحويل النتائج إلى صفوف جديدة
-    const newRows = predictions.map(prediction => prediction.map(num => num.toString()));
-
-    // إضافة الصفوف الجديدة إلى الشيت
-    newRows.forEach(row => {
-        xlsx.utils.sheet_add_aoa(newSheet, [row], { origin: -1 });
+// دالة لتنسيق النتائج كجدول
+function formatAsTable(data) {
+    let table = "------------------------------\n";
+    data.forEach(row => {
+        table += '| ' + row.join(' | ') + ' |\n';
+        table += "------------------------------\n";
     });
+    return table;
+}
 
-    // كتابة التحديثات إلى ملف الإكسل
-    xlsx.writeFile(newWorkbook, 'results.xlsx');
+// دالة لتنسيق تحليل النتائج كجدول
+function formatAnalysisAsTable(analysis) {
+    let data = Object.entries(analysis).map(([key, value]) => [key, value.toString()]);
+    return formatAsTable(data);
 }
 
 // أوامر البوت
 bot.onText(/\/analyze/, (msg) => {
     const chatId = msg.chat.id;
     const analysis = analyzeResults(parsedResults);
-    bot.sendMessage(chatId, `تحليل: ${JSON.stringify(analysis)}`);
+    const analysisTable = formatAnalysisAsTable(analysis);
+    bot.sendMessage(chatId, `تحليل:\n${analysisTable}`);
 });
 
 bot.onText(/\/predict/, (msg) => {
     const chatId = msg.chat.id;
     const predictions = generatePredictions(parsedResults);
     updateExcel(predictions);
-    bot.sendMessage(chatId, `التنبؤات التالية:\n${predictions.map(p => p.join(', ')).join('\n')}`);
+    const predictionsTable = formatAsTable(predictions);
+    bot.sendMessage(chatId, `التنبؤات التالية:\n${predictionsTable}`);
 });
 
 bot.onText(/\/start/, (msg) => {
@@ -87,5 +96,6 @@ bot.onText(/\/generate/, (msg) => {
     const chatId = msg.chat.id;
     const predictions = generatePredictions(parsedResults);
     updateExcel(predictions);
-    bot.sendMessage(chatId, `נוצרו תחזיות חדשות:\n${predictions.map(p => p.join(', ')).join('\n')}`);
+    const predictionsTable = formatAsTable(predictions);
+    bot.sendMessage(chatId, `נוצרו תחזיות חדשות:\n${predictionsTable}`);
 });
