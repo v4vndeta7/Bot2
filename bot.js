@@ -1,22 +1,19 @@
 const TelegramBot = require('node-telegram-bot-api');
 const xlsx = require('xlsx');
-const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk';
-
-const bot = new TelegramBot(token, {polling: true});
+const token = '6470010453:AAG4tRMuHwBiOzhOlAPEwU44hsh4TmPlTZk'; // تأكد من وضع التوكن الصحيح هنا
+const bot = new TelegramBot(token, { polling: true });
 
 // اقرأ ملف الإكسل
 const workbook = xlsx.readFile('results.xlsx');
 const sheet_name_list = workbook.SheetNames;
 const resultsSheet = workbook.Sheets[sheet_name_list[0]];
-const results = xlsx.utils.sheet_to_json(resultsSheet, {header: 1});
+const results = xlsx.utils.sheet_to_json(resultsSheet, { header: 1 });
 
 // تحويل النتائج إلى أرقام
 const parsedResults = results.map(row => row.map(cell => parseInt(cell, 10)));
 
 // دالة لتحليل النتائج وإيجاد الأنماط
 function analyzeResults(data) {
-    // هنا يمكنك إضافة الخوارزميات الخاصة بك لتحليل النتائج وإيجاد الأنماط
-    // هذه دالة بسيطة لتوضيح الفكرة
     let summary = {};
     data.forEach(row => {
         row.forEach(number => {
@@ -32,10 +29,30 @@ function analyzeResults(data) {
 
 // دالة لتخمين النتائج المستقبلية بناءً على التحليل
 function predictNextResult(data) {
-    // هنا يمكنك إضافة الخوارزميات الخاصة بك لتخمين النتائج المستقبلية
-    // هذه دالة بسيطة لتوضيح الفكرة
-    const lastRow = data[data.length - 1];
-    return lastRow.map(num => (num + 1) % 10); // مجرد مثال
+    const predictions = [];
+    for (let i = 0; i < 15; i++) {
+        const lastRow = data[data.length - 1];
+        const nextPrediction = lastRow.map(num => (num + i + 1) % 10); // مجرد مثال لتوليد التخمينات
+        predictions.push(nextPrediction);
+    }
+    return predictions;
+}
+
+// دالة لتحديث ملف الإكسل بالنتائج الجديدة
+function updateExcel(predictions) {
+    const newWorkbook = xlsx.readFile('results.xlsx');
+    const newSheet = newWorkbook.Sheets[sheet_name_list[0]];
+
+    // تحويل النتائج إلى صفوف جديدة
+    const newRows = predictions.map(prediction => prediction.map(num => num.toString()));
+
+    // إضافة الصفوف الجديدة إلى الشيت
+    newRows.forEach(row => {
+        xlsx.utils.sheet_add_aoa(newSheet, [row], { origin: -1 });
+    });
+
+    // كتابة التحديثات إلى ملف الإكسل
+    xlsx.writeFile(newWorkbook, 'results.xlsx');
 }
 
 // أوامر البوت
@@ -47,12 +64,12 @@ bot.onText(/\/analyze/, (msg) => {
 
 bot.onText(/\/predict/, (msg) => {
     const chatId = msg.chat.id;
-    const prediction = predictNextResult(parsedResults);
-    bot.sendMessage(chatId, `Next prediction: ${prediction.join(', ')}`);
+    const predictions = predictNextResult(parsedResults);
+    updateExcel(predictions);
+    bot.sendMessage(chatId, `Next predictions:\n${predictions.map(p => p.join(', ')).join('\n')}`);
 });
 
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, "Welcome! Use /analyze to analyze results and /predict to predict the next result.");
+    bot.sendMessage(chatId, "Welcome! Use /analyze to analyze results and /predict to predict the next results.");
 });
-
